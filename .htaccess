@@ -1,0 +1,23 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# Forwarded HTTPS detection for Render / Reverse Proxy
+SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on
+
+# Strip internal port numbers (e.g. :10000) from HTTP_HOST
+RewriteCond %{HTTP_HOST} ^([^:]+):[0-9]+$
+RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+# Direct routing for admin directory to avoid Apache mod_dir 301 port-leaking redirects
+RewriteRule ^admin/?$ admin/index.php [L,QSA]
+
+# Project routing
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?page=$1 [L,QSA]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>
