@@ -60,7 +60,7 @@ if(isset($_GET['id'])){
                         <div class="col-8">
                             <dl>
                                 <dt class="text-muted">Name</dt>
-                                <dd class="pl-4"><?= ucwords($groom) ?></dd>
+                                <dd class="pl-4"><?= ucwords((string)$groom) ?></dd>
                                 <dt class="text-muted">Date of Birth</dt>
                                 <dd class="pl-4"><?= date("M d, Y", strtotime($groom_dob)) ?></dd>
                                 <dt class="text-muted">Religion</dt>
@@ -83,7 +83,7 @@ if(isset($_GET['id'])){
                         <div class="col-8">
                             <dl>
                                 <dt class="text-muted">Name</dt>
-                                <dd class="pl-4"><?= ucwords($bride) ?></dd>
+                                <dd class="pl-4"><?= ucwords((string)$bride) ?></dd>
                                 <dt class="text-muted">Date of Birth</dt>
                                 <dd class="pl-4"><?= date("M d, Y", strtotime($bride_dob)) ?></dd>
                                 <dt class="text-muted">Religion</dt>
@@ -115,18 +115,18 @@ if(isset($_GET['id'])){
                     <tbody>
                         <tr>
                             <td class="text-center py-1 px-2">1</td>
-                            <td class=" py-1 px-2"><?= ucwords($witness1_name) ?></td>
-                            <td class=" py-1 px-2"><?= ucwords($witness1_address) ?></td>
+                            <td class=" py-1 px-2"><?= ucwords((string)($witness1_name ?? '')) ?></td>
+                            <td class=" py-1 px-2"><?= ucwords((string)($witness1_address ?? '')) ?></td>
                         </tr>
                         <tr>
                             <td class="text-center py-1 px-2">2</td>
-                            <td class=" py-1 px-2"><?= ucwords($witness2_name) ?></td>
-                            <td class=" py-1 px-2"><?= ucwords($witness2_address) ?></td>
+                            <td class=" py-1 px-2"><?= ucwords((string)($witness2_name ?? '')) ?></td>
+                            <td class=" py-1 px-2"><?= ucwords((string)($witness2_address ?? '')) ?></td>
                         </tr>
                         <tr>
                             <td class="text-center py-1 px-2">3</td>
-                            <td class=" py-1 px-2"><?= ucwords($witness3_name) ?></td>
-                            <td class=" py-1 px-2"><?= ucwords($witness3_address) ?></td>
+                            <td class=" py-1 px-2"><?= ucwords((string)($witness3_name ?? '')) ?></td>
+                            <td class=" py-1 px-2"><?= ucwords((string)($witness3_address ?? '')) ?></td>
                         </tr>
                     </tbody>
                 </table>
@@ -150,7 +150,7 @@ if(isset($_GET['id'])){
                             Rejected By:
                         <?php endif; ?>
                     </dt>
-                    <dd class="pl-4"><?= ucwords(isset($action_by)? $action_by : '') ?></dd>
+                    <dd class="pl-4"><?= ucwords((string)(isset($action_by)? $action_by : '')) ?></dd>
                 </dl>
             </div>
         </div>

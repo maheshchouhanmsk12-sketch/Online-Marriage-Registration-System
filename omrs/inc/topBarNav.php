@@ -49,14 +49,27 @@
           <li class="nav-item">
             <div class="btn-group nav-link">
                   <button type="button" class="btn btn-rounded badge badge-light dropdown-toggle dropdown-icon" data-toggle="dropdown">
-                    <span><img src="<?php echo validate_image("uploads/client-{$_settings->userdata('id')}.png")."?v=".(strtotime($_settings->userdata('date_updated'))) ?>" class="img-circle elevation-2 user-img" alt="User Image"></span>
-                    <span class="ml-3"><?php echo ucwords($_settings->userdata('fullname')) ?></span>
+                    <?php 
+                      $u_fullname = $_settings->userdata('fullname');
+                      if (empty($u_fullname)) {
+                        $u_fullname = trim(($_settings->userdata('firstname') ?? '') . ' ' . ($_settings->userdata('lastname') ?? ''));
+                      }
+                      if (empty($u_fullname)) {
+                        $u_fullname = $_settings->userdata('username') ?? 'Client User';
+                      }
+                      $date_updated = $_settings->userdata('date_updated') ?: $_settings->userdata('date_created');
+                      $v_param = !empty($date_updated) ? "?v=" . strtotime($date_updated) : "";
+                      $avatar = $_settings->userdata('avatar');
+                      $avatar_url = (!empty($avatar) && is_file(base_app.$avatar)) ? validate_image($avatar) : validate_image("uploads/client-{$_settings->userdata('id')}.png");
+                    ?>
+                    <span><img src="<?php echo $avatar_url . $v_param ?>" class="img-circle elevation-2 user-img" alt="User Image"></span>
+                    <span class="ml-3"><?php echo ucwords((string)$u_fullname) ?></span>
                     <span class="sr-only">Toggle Dropdown</span>
                   </button>
                   <div class="dropdown-menu" role="menu">
                     <a class="dropdown-item" href="<?php echo base_url.'?page=user' ?>"><span class="fa fa-user"></span> My Account</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="<?php echo base_url.'/classes/Login.php?f=clogout' ?>"><span class="fas fa-sign-out-alt"></span> Logout</a>
+                    <a class="dropdown-item" href="<?php echo base_url.'classes/Login.php?f=clogout' ?>"><span class="fas fa-sign-out-alt"></span> Logout</a>
                   </div>
               </div>
           </li>

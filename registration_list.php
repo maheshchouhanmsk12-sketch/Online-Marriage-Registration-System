@@ -54,8 +54,8 @@
 							<td class="text-right"><?php echo date("Y-m-d H:i",strtotime($row['date_created'])) ?></td>
 							<td><?php echo $row['registration_code'] ?></td>
 							<td class="lh-1">
-								<small><span class="text-muted">Groom: </span><?= ucwords($groom) ?></small><br>
-								<small><span class="text-muted">Bride: </span><?= ucwords($bride) ?></small>
+								<small><span class="text-muted">Groom: </span><?= ucwords((string)$groom) ?></small><br>
+								<small><span class="text-muted">Bride: </span><?= ucwords((string)$bride) ?></small>
 							</td>
 							<td class="text-center">
                                 <?php if($row['status'] == 1): ?>

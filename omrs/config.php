@@ -2,6 +2,8 @@
 ob_start();
 ini_set('date.timezone','Asia/Manila');
 date_default_timezone_set('Asia/Manila');
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
+ini_set('display_errors', 0);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

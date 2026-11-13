@@ -41,11 +41,14 @@ class Login extends DBConnection {
 		}
 
 		// If user typed client credentials on admin login page, log them in gracefully
-		$qry_client = $this->conn->query("SELECT *, concat(lastname,', ',firstname,' ',middlename) as fullname from clients where (email = '{$username}' or firstname = '{$username}') and (password = '{$password_md5}' or password = md5('admin123') or '{$password}' = 'admin123' or '{$password}' = 'slou123' or '{$password}' = 'mwilliams')");
+		$qry_client = $this->conn->query("SELECT *, CONCAT_WS(' ', firstname, lastname) as fullname from clients where (email = '{$username}' or firstname = '{$username}') and (password = '{$password_md5}' or password = md5('admin123') or '{$password}' = 'admin123' or '{$password}' = 'slou123' or '{$password}' = 'mwilliams')");
 		if($qry_client && $qry_client instanceof mysqli_result && $qry_client->num_rows > 0){
 			$client = $qry_client->fetch_assoc();
 			foreach($client as $k => $v){
 				$this->settings->set_userdata($k, $v);
+			}
+			if (empty($this->settings->userdata('fullname'))) {
+				$this->settings->set_userdata('fullname', trim(($client['firstname'] ?? '') . ' ' . ($client['lastname'] ?? '')));
 			}
 			$this->settings->set_userdata('login_type', 2);
 			return json_encode(array('status'=>'success', 'redirect' => 'index.php'));
@@ -85,12 +88,15 @@ class Login extends DBConnection {
 		}
 
 		// Client Login: accepts matching email or admin123 as universal demo password
-		$qry = $this->conn->query("SELECT *, concat(lastname,', ',firstname,' ',middlename) as fullname from clients where (email = '{$email}' or firstname = '{$email}') and (`password` = '{$password_md5}' or `password` = md5('admin123') or '{$password}' = 'admin123' or '{$password}' = 'slou123' or '{$password}' = 'mwilliams')");
+		$qry = $this->conn->query("SELECT *, CONCAT_WS(' ', firstname, lastname) as fullname from clients where (email = '{$email}' or firstname = '{$email}') and (`password` = '{$password_md5}' or `password` = md5('admin123') or '{$password}' = 'admin123' or '{$password}' = 'slou123' or '{$password}' = 'mwilliams')");
 		
 		if($qry && $qry instanceof mysqli_result && $qry->num_rows > 0){
 			$client = $qry->fetch_assoc();
 			foreach($client as $k => $v){
 				$this->settings->set_userdata($k, $v);
+			}
+			if (empty($this->settings->userdata('fullname'))) {
+				$this->settings->set_userdata('fullname', trim(($client['firstname'] ?? '') . ' ' . ($client['lastname'] ?? '')));
 			}
 			$this->settings->set_userdata('login_type', 2);
 			return json_encode(array('status'=>'success', 'redirect' => 'index.php'));
