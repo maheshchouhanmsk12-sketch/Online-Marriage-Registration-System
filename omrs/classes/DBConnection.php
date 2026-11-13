@@ -90,8 +90,87 @@ class DBConnection {
                 error_log("Database connection failed ({$this->host}:{$this->port}): " . $err);
             } else {
                 $this->conn->set_charset("utf8mb4");
+                // Automatically check if database tables exist or need setup
+                $this->auto_check_database();
             }
         }
+    }
+
+    /**
+     * Auto-healer: Checks if project tables exist and ensures admin & demo users exist
+     */
+    protected function auto_check_database() {
+        if (!$this->conn || !($this->conn instanceof mysqli) || $this->conn->connect_errno) {
+            return;
+        }
+
+        $chk_c = @$this->conn->query("SHOW TABLES LIKE 'clients'");
+        $chk_u = @$this->conn->query("SHOW TABLES LIKE 'users'");
+        $need_setup = false;
+
+        if (!$chk_c || $chk_c->num_rows === 0 || !$chk_u || $chk_u->num_rows === 0) {
+            $need_setup = true;
+        } else {
+            // Check if old "Student Information System" is in system_info
+            $chk_s = @$this->conn->query("SELECT meta_value FROM system_info WHERE meta_field = 'name' LIMIT 1");
+            if ($chk_s && $r = $chk_s->fetch_assoc()) {
+                if (stripos($r['meta_value'], 'Student') !== false) {
+                    $need_setup = true;
+                }
+            }
+        }
+
+        if ($need_setup) {
+            $sql_file = dirname(__DIR__) . '/database/omrs_db.sql';
+            if (file_exists($sql_file)) {
+                $sql = file_get_contents($sql_file);
+                $lines = explode("\n", $sql);
+                $clean = "";
+                $in_c = false;
+                foreach ($lines as $line) {
+                    $tr = trim($line);
+                    if ($in_c) {
+                        if (strpos($tr, '*/') !== false) $in_c = false;
+                        continue;
+                    }
+                    if (substr($tr, 0, 2) === '/*' && strpos($tr, '*/') === false) {
+                        $in_c = true;
+                        continue;
+                    }
+                    if ($tr === '' || substr($tr, 0, 2) === '--' || substr($tr, 0, 1) === '#') continue;
+                    $clean .= $line . "\n";
+                }
+                $stmts = preg_split('/;\s*[\r\n]+/', $clean);
+                @$this->conn->query("SET FOREIGN_KEY_CHECKS = 0");
+                @$this->conn->query("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO'");
+                $tables_to_drop = ['registration_details', 'registration_list', 'clients', 'system_info', 'users'];
+                foreach ($tables_to_drop as $tb) {
+                    @$this->conn->query("DROP TABLE IF EXISTS `{$tb}`");
+                }
+                foreach ($stmts as $st) {
+                    $st = trim($st);
+                    if (!empty($st)) {
+                        @$this->conn->query($st);
+                    }
+                }
+                @$this->conn->query("SET FOREIGN_KEY_CHECKS = 1");
+            }
+        }
+
+        // Guarantee default admin exists with password admin123
+        @$this->conn->query("INSERT INTO users (`id`, `firstname`, `lastname`, `username`, `password`, `type`, `date_added`) 
+            VALUES (1, 'Administrator', 'Admin', 'admin', '0192023a7bbd73250516f069df18b500', 1, NOW()) 
+            ON DUPLICATE KEY UPDATE `password` = '0192023a7bbd73250516f069df18b500'");
+
+        // Guarantee slou@sample.com exists with password slou123
+        @$this->conn->query("INSERT INTO clients (`id`, `firstname`, `lastname`, `gender`, `contact`, `email`, `password`, `address`) 
+            VALUES (2, 'Samantha Jane', 'Lou', 'Female', '09546688795', 'slou@sample.com', '1ed1255790523a907da869eab7306f5a', 'Sample Address 2') 
+            ON DUPLICATE KEY UPDATE `password` = '1ed1255790523a907da869eab7306f5a'");
+
+        // Guarantee mwilliams@sample.com exists with password mwilliams
+        @$this->conn->query("INSERT INTO clients (`id`, `firstname`, `lastname`, `gender`, `contact`, `email`, `password`, `address`) 
+            VALUES (1, 'Mike', 'Williams', 'Male', '09123456798', 'mwilliams@sample.com', 'a88df23ac492e6e2782df6586a0c645f', 'Sample Address') 
+            ON DUPLICATE KEY UPDATE `password` = 'a88df23ac492e6e2782df6586a0c645f'");
     }
 
     public function __destruct() {

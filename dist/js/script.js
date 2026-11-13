@@ -22,7 +22,7 @@ window.alert_toast = function($msg = 'TEST', $bg = 'success', $pos = '') {
 }
 
 $(document).ready(function() {
-    // Login
+    // Admin Login
     $('#login-frm').submit(function(e) {
         e.preventDefault()
         start_loader()
@@ -32,27 +32,34 @@ $(document).ready(function() {
             url: _base_url_ + 'classes/Login.php?f=login',
             method: 'POST',
             data: $(this).serialize(),
+            dataType: 'json',
             error: err => {
                 console.log(err)
-
+                var _frm = $('#login-frm')
+                var _msg = "<div class='alert alert-danger text-white err_msg'><i class='fa fa-exclamation-triangle'></i> Connection error occurred. Please try again.</div>"
+                _frm.prepend(_msg)
+                end_loader()
             },
             success: function(resp) {
-                if (resp) {
-                    resp = JSON.parse(resp)
-                    if (resp.status == 'success') {
-                        location.replace(_base_url_ + 'admin/index.php');
-                    } else if (resp.status == 'incorrect') {
-                        var _frm = $('#login-frm')
-                        var _msg = "<div class='alert alert-danger text-white err_msg'><i class='fa fa-exclamation-triangle'></i> Incorrect username or password</div>"
-                        _frm.prepend(_msg)
-                        _frm.find('input').addClass('is-invalid')
-                        $('[name="username"]').focus()
-                    }
+                if (typeof resp === 'string') {
+                    try { resp = JSON.parse(resp); } catch(e) {}
+                }
+                if (resp && resp.status == 'success') {
+                    location.replace(_base_url_ + 'admin/index.php');
+                } else {
+                    var _frm = $('#login-frm')
+                    var errText = (resp && resp.msg) ? resp.msg : "Incorrect username or password";
+                    var _msg = "<div class='alert alert-danger text-white err_msg'><i class='fa fa-exclamation-triangle'></i> " + errText + "</div>"
+                    _frm.prepend(_msg)
+                    _frm.find('input').addClass('is-invalid')
+                    $('[name="username"]').focus()
                     end_loader()
                 }
             }
         })
     })
+
+    // Client Login
     $('#clogin-frm').submit(function(e) {
         e.preventDefault()
         start_loader()
@@ -62,25 +69,29 @@ $(document).ready(function() {
             url: _base_url_ + 'classes/Login.php?f=clogin',
             method: 'POST',
             data: $(this).serialize(),
+            dataType: 'json',
             error: err => {
                 console.log(err)
-                alert_toast("An error occured", 'danger')
+                var _frm = $('#clogin-frm')
+                var _msg = "<div class='alert alert-danger text-white err_msg'><i class='fa fa-exclamation-triangle'></i> Connection error occurred. Please try again.</div>"
+                _frm.prepend(_msg)
                 end_loader()
             },
             success: function(resp) {
-                if (resp) {
-                    resp = JSON.parse(resp)
-                    if (resp.status == 'success') {
-                        location.replace(_base_url_ + 'index.php');
-                    } else if (resp.status == 'incorrect') {
-                        var _frm = $('#clogin-frm')
-                        var _msg = "<div class='alert alert-danger text-white err_msg'><i class='fa fa-exclamation-triangle'></i> Incorrect code or password</div>"
-                        _frm.prepend(_msg)
-                        _frm.find('input').addClass('is-invalid')
-                        $('[name="username"]').focus()
-                    }
+                if (typeof resp === 'string') {
+                    try { resp = JSON.parse(resp); } catch(e) {}
                 }
-                end_loader()
+                if (resp && resp.status == 'success') {
+                    location.replace(_base_url_ + 'index.php');
+                } else {
+                    var _frm = $('#clogin-frm')
+                    var errText = (resp && resp.msg) ? resp.msg : "Incorrect email or password";
+                    var _msg = "<div class='alert alert-danger text-white err_msg'><i class='fa fa-exclamation-triangle'></i> " + errText + "</div>"
+                    _frm.prepend(_msg)
+                    _frm.find('input').addClass('is-invalid')
+                    $('[name="email"]').focus()
+                    end_loader()
+                }
             }
         })
     })
