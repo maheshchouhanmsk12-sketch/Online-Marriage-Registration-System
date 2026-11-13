@@ -8,3 +8,4 @@ echo ========================================================
 echo Done! Now connect your repo on Render Dashboard.
 echo ========================================================
 pause
+

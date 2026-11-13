@@ -106,3 +106,4 @@ All modified original files have safe `.original` backups preserved:
 - `admin/login.php.original`
 - `login.php.original`
 - `registration.php.original`
+

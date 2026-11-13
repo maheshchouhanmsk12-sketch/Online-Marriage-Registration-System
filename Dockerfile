@@ -32,3 +32,4 @@ EXPOSE 10000
 
 # Start container via start.sh
 CMD ["/usr/local/bin/start.sh"]
+
