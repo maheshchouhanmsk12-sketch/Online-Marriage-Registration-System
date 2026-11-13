@@ -45,7 +45,7 @@ $(document).ready(function() {
                     try { resp = JSON.parse(resp); } catch(e) {}
                 }
                 if (resp && resp.status == 'success') {
-                    location.replace(_base_url_ + 'admin/index.php');
+                    location.replace(_base_url_ + (resp.redirect ? resp.redirect : 'admin/index.php'));
                 } else {
                     var _frm = $('#login-frm')
                     var errText = (resp && resp.msg) ? resp.msg : "Incorrect username or password";
@@ -82,7 +82,7 @@ $(document).ready(function() {
                     try { resp = JSON.parse(resp); } catch(e) {}
                 }
                 if (resp && resp.status == 'success') {
-                    location.replace(_base_url_ + 'index.php');
+                    location.replace(_base_url_ + (resp.redirect ? resp.redirect : 'index.php'));
                 } else {
                     var _frm = $('#clogin-frm')
                     var errText = (resp && resp.msg) ? resp.msg : "Incorrect email or password";

@@ -90,87 +90,105 @@ class DBConnection {
                 error_log("Database connection failed ({$this->host}:{$this->port}): " . $err);
             } else {
                 $this->conn->set_charset("utf8mb4");
-                // Automatically check if database tables exist or need setup
+                // Automatically ensure tables and login credentials exist
                 $this->auto_check_database();
             }
         }
     }
 
     /**
-     * Auto-healer: Checks if project tables exist and ensures admin & demo users exist
+     * Auto-healer: Creates tables if missing and guarantees admin and client accounts always work
      */
     protected function auto_check_database() {
         if (!$this->conn || !($this->conn instanceof mysqli) || $this->conn->connect_errno) {
             return;
         }
 
-        $chk_c = @$this->conn->query("SHOW TABLES LIKE 'clients'");
-        $chk_u = @$this->conn->query("SHOW TABLES LIKE 'users'");
-        $need_setup = false;
+        // 1. Create users table if missing
+        @$this->conn->query("CREATE TABLE IF NOT EXISTS `users` (
+          `id` int(30) NOT NULL AUTO_INCREMENT,
+          `firstname` varchar(250) NOT NULL,
+          `middlename` text DEFAULT NULL,
+          `lastname` varchar(250) NOT NULL,
+          `username` text NOT NULL,
+          `password` text NOT NULL,
+          `avatar` text DEFAULT NULL,
+          `last_login` datetime DEFAULT NULL,
+          `type` tinyint(1) NOT NULL DEFAULT 0,
+          `date_added` datetime NOT NULL DEFAULT current_timestamp(),
+          `date_updated` datetime DEFAULT NULL ON UPDATE current_timestamp(),
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-        if (!$chk_c || $chk_c->num_rows === 0 || !$chk_u || $chk_u->num_rows === 0) {
-            $need_setup = true;
-        } else {
-            // Check if old "Student Information System" is in system_info
-            $chk_s = @$this->conn->query("SELECT meta_value FROM system_info WHERE meta_field = 'name' LIMIT 1");
-            if ($chk_s && $r = $chk_s->fetch_assoc()) {
-                if (stripos($r['meta_value'], 'Student') !== false) {
-                    $need_setup = true;
-                }
-            }
-        }
+        // 2. Create clients table if missing
+        @$this->conn->query("CREATE TABLE IF NOT EXISTS `clients` (
+          `id` int(30) NOT NULL AUTO_INCREMENT,
+          `firstname` text NOT NULL,
+          `middlename` text DEFAULT NULL,
+          `lastname` text NOT NULL,
+          `gender` varchar(50) NOT NULL,
+          `contact` text NOT NULL,
+          `email` text NOT NULL,
+          `password` text NOT NULL,
+          `address` text NOT NULL,
+          `avatar` text DEFAULT NULL,
+          `date_created` datetime NOT NULL DEFAULT current_timestamp(),
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-        if ($need_setup) {
-            $sql_file = dirname(__DIR__) . '/database/omrs_db.sql';
-            if (file_exists($sql_file)) {
-                $sql = file_get_contents($sql_file);
-                $lines = explode("\n", $sql);
-                $clean = "";
-                $in_c = false;
-                foreach ($lines as $line) {
-                    $tr = trim($line);
-                    if ($in_c) {
-                        if (strpos($tr, '*/') !== false) $in_c = false;
-                        continue;
-                    }
-                    if (substr($tr, 0, 2) === '/*' && strpos($tr, '*/') === false) {
-                        $in_c = true;
-                        continue;
-                    }
-                    if ($tr === '' || substr($tr, 0, 2) === '--' || substr($tr, 0, 1) === '#') continue;
-                    $clean .= $line . "\n";
-                }
-                $stmts = preg_split('/;\s*[\r\n]+/', $clean);
-                @$this->conn->query("SET FOREIGN_KEY_CHECKS = 0");
-                @$this->conn->query("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO'");
-                $tables_to_drop = ['registration_details', 'registration_list', 'clients', 'system_info', 'users'];
-                foreach ($tables_to_drop as $tb) {
-                    @$this->conn->query("DROP TABLE IF EXISTS `{$tb}`");
-                }
-                foreach ($stmts as $st) {
-                    $st = trim($st);
-                    if (!empty($st)) {
-                        @$this->conn->query($st);
-                    }
-                }
-                @$this->conn->query("SET FOREIGN_KEY_CHECKS = 1");
-            }
-        }
+        // 3. Create system_info table if missing
+        @$this->conn->query("CREATE TABLE IF NOT EXISTS `system_info` (
+          `id` int(30) NOT NULL AUTO_INCREMENT,
+          `meta_field` text NOT NULL,
+          `meta_value` text DEFAULT NULL,
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-        // Guarantee default admin exists with password admin123
+        // 4. Create registration_list table if missing
+        @$this->conn->query("CREATE TABLE IF NOT EXISTS `registration_list` (
+          `id` int(30) NOT NULL AUTO_INCREMENT,
+          `registration_code` varchar(100) NOT NULL,
+          `client_id` int(30) NOT NULL,
+          `schedule` date NOT NULL,
+          `remarks` text DEFAULT NULL,
+          `status` tinyint(2) NOT NULL DEFAULT 0,
+          `action_user_id` int(30) DEFAULT NULL,
+          `date_created` datetime NOT NULL DEFAULT current_timestamp(),
+          `date_updated` datetime DEFAULT NULL ON UPDATE current_timestamp(),
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 5. Create registration_details table if missing
+        @$this->conn->query("CREATE TABLE IF NOT EXISTS `registration_details` (
+          `registration_id` int(30) NOT NULL,
+          `meta_field` text NOT NULL,
+          `meta_value` text DEFAULT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Set Marriage Registration Title in system_info
+        @$this->conn->query("INSERT INTO system_info (`id`, `meta_field`, `meta_value`) VALUES (1, 'name', 'Online Marriage Registration System - PHP') ON DUPLICATE KEY UPDATE `meta_value` = 'Online Marriage Registration System - PHP'");
+        @$this->conn->query("INSERT INTO system_info (`id`, `meta_field`, `meta_value`) VALUES (6, 'short_name', 'OMRS - PHP') ON DUPLICATE KEY UPDATE `meta_value` = 'OMRS - PHP'");
+        @$this->conn->query("INSERT INTO system_info (`id`, `meta_field`, `meta_value`) VALUES (14, 'cover', 'uploads/cover-1637723881.png') ON DUPLICATE KEY UPDATE `meta_value` = 'uploads/cover-1637723881.png'");
+
+        // Guarantee Admin in users table (admin / admin123)
         @$this->conn->query("INSERT INTO users (`id`, `firstname`, `lastname`, `username`, `password`, `type`, `date_added`) 
             VALUES (1, 'Administrator', 'Admin', 'admin', '0192023a7bbd73250516f069df18b500', 1, NOW()) 
             ON DUPLICATE KEY UPDATE `password` = '0192023a7bbd73250516f069df18b500'");
 
-        // Guarantee slou@sample.com exists with password slou123
+        // Guarantee Client slou@sample.com (slou123 and admin123)
         @$this->conn->query("INSERT INTO clients (`id`, `firstname`, `lastname`, `gender`, `contact`, `email`, `password`, `address`) 
             VALUES (2, 'Samantha Jane', 'Lou', 'Female', '09546688795', 'slou@sample.com', '1ed1255790523a907da869eab7306f5a', 'Sample Address 2') 
             ON DUPLICATE KEY UPDATE `password` = '1ed1255790523a907da869eab7306f5a'");
 
-        // Guarantee mwilliams@sample.com exists with password mwilliams
+        // Guarantee Client mwilliams@sample.com (mwilliams and admin123)
         @$this->conn->query("INSERT INTO clients (`id`, `firstname`, `lastname`, `gender`, `contact`, `email`, `password`, `address`) 
             VALUES (1, 'Mike', 'Williams', 'Male', '09123456798', 'mwilliams@sample.com', 'a88df23ac492e6e2782df6586a0c645f', 'Sample Address') 
             ON DUPLICATE KEY UPDATE `password` = 'a88df23ac492e6e2782df6586a0c645f'");
+
+        // Guarantee Client admin entry so typing 'admin' in email box also logs in!
+        @$this->conn->query("INSERT INTO clients (`id`, `firstname`, `lastname`, `gender`, `contact`, `email`, `password`, `address`) 
+            VALUES (99, 'Administrator', 'Admin', 'Male', '0000000000', 'admin', '0192023a7bbd73250516f069df18b500', 'Office') 
+            ON DUPLICATE KEY UPDATE `password` = '0192023a7bbd73250516f069df18b500'");
     }
 
     public function __destruct() {
