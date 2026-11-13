@@ -8,7 +8,11 @@
   </script>
   <style>
     body{
-      background-image: url("<?php echo validate_image($_settings->info('cover')) ?>");
+      <?php 
+        $cover = $_settings->info('cover');
+        $cover_url = (!empty($cover) && is_file(base_app.$cover)) ? validate_image($cover) : base_url.'uploads/cover-1637723881.png';
+      ?>
+      background-image: url("<?php echo $cover_url ?>");
       background-size:cover;
       background-repeat:no-repeat;
     }

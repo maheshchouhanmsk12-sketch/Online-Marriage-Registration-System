@@ -1,16 +1,17 @@
 <?php
   require_once('sess_auth.php');
-  
+  $cover = $_settings->info('cover');
+  $cover_url = (!empty($cover) && is_file(base_app.$cover)) ? validate_image($cover) : base_url.'uploads/cover-1637723881.png';
 ?>
 <head>
   <style>
     :root{
-      --bg-img:url('<?php echo validate_image($_settings->info('cover')) ?>');
+      --bg-img:url('<?php echo $cover_url ?>');
     }
   </style>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-  	<title><?php echo $_settings->info('title') != false ? $_settings->info('title').' | ' : '' ?><?php echo $_settings->info('name') ?></title>
+  	<title><?php echo $_settings->info('title') != false ? $_settings->info('title').' | ' : '' ?><?php echo $_settings->info('name') ?: 'Online Marriage Registration System' ?></title>
     <link rel="icon" href="<?php echo validate_image($_settings->info('logo')) ?>" />
     <!-- Google Font: Source Sans Pro -->
     <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&amp;display=fallback"> -->
@@ -72,7 +73,7 @@
         left:0;
         width:100%;
         height:100%;
-        background-image:url(<?php echo base_url.$_settings->info('cover') ?>);
+        background-image:url(<?php echo $cover_url ?>);
         background-repeat: no-repeat;
         background-size: cover;
         filter: drop-shadow(0px 7px 6px black);
