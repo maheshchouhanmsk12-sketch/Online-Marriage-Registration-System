@@ -21,7 +21,7 @@
       text-shadow: 2px 2px black
     }
   </style>
-  <h1 class="text-center py-5 login-title"><b><?php echo $_settings->info('name') ?></b></h1>
+  <h1 class="text-center py-5 login-title"><b><?php echo $_settings->info('name') ?: 'Online Marriage Registration System' ?></b></h1>
 <div class="login-box">
   <!-- /.login-logo -->
   <div class="card card-outline card-primary">

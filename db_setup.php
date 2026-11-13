@@ -101,6 +101,15 @@ if ($mysqli) {
                 $admin_verified = true;
             }
         }
+
+        // Check current project name from system_info table
+        $current_project_name = '';
+        if (in_array('system_info', $existing_tables)) {
+            $res_sys = @$mysqli->query("SELECT meta_value FROM system_info WHERE meta_field = 'name' LIMIT 1");
+            if ($res_sys && $row_sys = $res_sys->fetch_assoc()) {
+                $current_project_name = $row_sys['meta_value'];
+            }
+        }
     } else {
         $connection_error = mysqli_connect_error();
     }
@@ -152,6 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         @$mysqli->query("SET FOREIGN_KEY_CHECKS = 0");
         @$mysqli->query("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO'");
+
+        // Drop conflicting old tables from previous projects (e.g. Student Information System)
+        $tables_to_drop = ['registration_details', 'registration_list', 'clients', 'system_info', 'users'];
+        foreach ($tables_to_drop as $tb) {
+            @$mysqli->query("DROP TABLE IF EXISTS `{$tb}`");
+        }
 
         $success_count = 0;
         $error_count = 0;
@@ -242,6 +257,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
             <?php endif; ?>
 
+            <?php if (!empty($current_project_name) && strpos($current_project_name, 'Marriage') === false): ?>
+                <div class="alert alert-warning alert-dismissible fade show">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <h5><i class="fas fa-exclamation-circle mr-2"></i> Old Project Data Detected!</h5>
+                    Your connected Aiven database currently has data from: <strong><?= htmlspecialchars($current_project_name) ?></strong>.<br>
+                    Click the <strong>"1-Click Import Database"</strong> button below to reset and load the clean <strong>Online Marriage Registration System</strong> tables.
+                </div>
+            <?php endif; ?>
+
             <!-- System Configuration & Live Status -->
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -271,6 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             <?php if ($connection_status): ?>
                                 <p class="text-success mb-2 font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Aiven Cloud MySQL is reachable!</p>
                                 <ul class="list-unstyled mb-0">
+                                    <li><strong>Current System Name:</strong> <?= !empty($current_project_name) ? '<span class="badge badge-info">' . htmlspecialchars($current_project_name) . '</span>' : '<span class="text-muted">None / Empty</span>' ?></li>
                                     <li><strong>Server Version:</strong> <?= htmlspecialchars($server_version) ?></li>
                                     <li><strong>Installed Tables:</strong> <span class="badge badge-primary"><?= count($existing_tables) ?> tables</span></li>
                                     <li><strong>Admin Account:</strong> <?= $admin_verified ? '<span class="badge badge-success"><i class="fas fa-user-check"></i> Verified (admin)</span>' : '<span class="badge badge-warning">Not Found</span>' ?></li>
